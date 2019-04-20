@@ -20,6 +20,7 @@
 
 ## AWS CodePipeline
 
+* Continuous delivery service
 * Helps to
   * model,
   * visualize, and
@@ -38,18 +39,6 @@ helps to orchestrate(?)
   Automates application deployments
 
 
-
-Show example use cases
- Creation of pipeline for
-  Compiling code and storing the artifact
-  use code deploy to deploy to ec2 instances
-  use code build to create docker image
-  use code deploy to ECS (Fargate)
-
-
-
-
-
 ### Code Commit
 
 * git-based source code repository
@@ -62,39 +51,65 @@ Show example use cases
 
 * specify the location of your source code, choose your build settings, and CodeBuild will run build scripts for compiling, testing, and packaging your code. There are no servers to provision and scale, or software to install, configure, and operate. (Source: https://aws.amazon.com/codebuild/features/?nc=sn&loc=2)
 
-*  AWS CodeBuild stellt Build-Umgebungen für Java, Python, Node.js, Ruby, Go, Android, NET Core für Linux und Docker bereit.
+* Supoprts different build environments for
+  * Java OpenJDK 8, 9, 11
+  * Python 3.6.5, 3.7.1
+  * Node.js 8, 10
+  * Ruby
+  * Go 1.10, 1.11
+  * Android
+  * NET Core 2.1
+  * Docker 17.09, 18.09
+  
 * Eine Build-Umgebung stellt eine Kombination aus Betriebssystem, Programmiersprachenlaufzeit und Tools dar, die CodeBuild zum Ausführen eines Builds verwendet. 
 
 ```shell
 aws codebuild list-curated-environment-images
 ```
 
-
-| Plattform	| Programmiersprache oder Framework	| Laufzeitversion	| Image-Kennung	| Definition
-| :-------------:| :-------------:| :-------------:| :-------------:|| :-------------:|
-Ubuntu 14.04	(Basis-Image)		aws/codebuild/ubuntu-base:14.04	ubuntu/ubuntu-base/14.04
-Ubuntu 14.04	Android	26.1.1	aws/codebuild/android-java-8:26.1.1	ubuntu/android-java-8/26.1.1
-Ubuntu 14.04	Docker	18.09.0	aws/codebuild/docker:18.09.0	ubuntu/docker/18.09.0
-Ubuntu 14.04	Docker	17.09.0	aws/codebuild/docker:17.09.0	ubuntu/docker/17.09.0
-Ubuntu 14.04	Golang	1.11	aws/codebuild/golang:1.11	ubuntu/golang/1.11
-Ubuntu 14.04	Golang	1.10	aws/codebuild/golang:1.10	ubuntu/golang/1.10
-Ubuntu 14.04	Java	11	aws/codebuild/java:openjdk-11	ubuntu/java/openjdk-11
-Ubuntu 14.04	Java	9	aws/codebuild/java:openjdk-9	ubuntu/java/openjdk-9
-Ubuntu 14.04	Java	8	aws/codebuild/java:openjdk-8	ubuntu/java/openjdk-8
-Ubuntu 14.04	Node.js	10.14.1	aws/codebuild/nodejs:10.14.1	ubuntu/nodejs/10.14.1
-Ubuntu 14.04	Node.js	8.11.0	aws/codebuild/nodejs:8.11.0	ubuntu/nodejs/8.11.0
-Ubuntu 14.04	PHP	7.1	aws/codebuild/php:7.1	ubuntu/php/7.1
-Ubuntu 14.04	Python	3.7.1	aws/codebuild/python:3.7.1	ubuntu/python/3.7.1
-Ubuntu 14.04	Python	3.6.5	aws/codebuild/python:3.6.5	ubuntu/python/3.6.5
-Ubuntu 14.04	Ruby	2.5.3	aws/codebuild/ruby:2.5.3	ubuntu/ruby/2.5.3
-Ubuntu 14.04	.NET Core	2.1	aws/codebuild/dot-net:core-2.1	ubuntu/dot-net/core-2.1
-Windows Server Core 2016	(Basis-Image)		aws/codebuild/windows-base:1.0	
-CodeBuild verwaltet auch die folgenden Docker-Images, die nicht in den CodeBuild- und CodePipeline-Konsolen verfügbar sind.
-
-
 ## CodeDeploy
-deployment service that automates application deployments to Amazon EC2 instances, on-premises instances, serverless Lambda functions, or Amazon ECS services.
 
+* Automates application deployments to 
+  * Amazon EC2 instances, 
+  * on-premises instances, 
+  * serverless Lambda functions, or 
+  * Amazon ECS services.
+
+
+* _Create application_
+* Select as compute platform _Amazon ECS_
+*  Create a deployment group
+* TODO: Here we need to have already a cluster
+
+
+## Scenarios in our team
+
+Pipeline 1 (Triggered by code commit)
+
+* Compile Code
+* Run unit tests
+* Run static code analysis
+* Upload software artifact to repository
+
+Pipeline 2a (Triggered by artifact upload)
+
+* Use CodeDeploy to deploy artifact to environments (s)
+
+
+Pipeline 2b (Triggered by artifact upload)
+
+* Fetch artifact
+* Build new Docker image
+* Upload Docker image to registry
+  
+
+
+Pipeline 3 (Triggered by Docker image upload)
+
+* Use CodeDeploy to deploy to ECS/ Fargate  
+  
+
+# CodePipel
 # Pros and Cons
 
 * Automated setup via CDK
@@ -108,59 +123,75 @@ deployment service that automates application deployments to Amazon EC2 instance
   * Build configuration as code
 
 
-# TODO
+
+# Demo
 
 * Login to the [AWS console](https://aws.amazon.com/de/console/)
 
 
-
-### Prepare the Elasitc Beanstalk application
-
-* Click on _Create New Application_
-* Application name is _NodeJsDemo_
-* Click _Action_, _Create environment_
-* Select _Web server environment_
-
-
-* Update environment name
-* Find a free domain name
-* Select Node.js as platform
-* Select _Configure more options_
-* Select _High Availability_ from configuration presets
-* Click _Create environment_
-
-Open browser at provided URL
-
-
-
-### Creating a repository
+## Create a repository
 
 * Go to _CodeCommit_ service
 * Click _Create Repository_
-* Provide repository name and (optional) description
-
-~~~~sh
-Name: nodejsDemo
-Description: Repository storing the code for the NodeJs Demo
-~~~~
-
+* Provide repository name and optional description
 * Click _Create_
 
 
-* Click on _Clone URL_
-* Click _Clone HTTPS_ to get the endpoint
+### Connection information
 
-~~~~sh
-https://git-codecommit.eu-west-1.amazonaws.com/v1/repos/nodejsDemo
-~~~~
+* _Clone URL_
+* _Clone HTTPS_
 
+
+### Accessing the repository
 
 * Switch to _IAM_ service and create a user
 * Setup _HTTPS Git credentials for AWS CodeCommit_
-* Save username and password.
+* Save username and password
   
-  Both are required when interacting with repository
 * Push code to repository
+
+### Create the CodeBuild project
+
+* Click _Create Project_
+* Provide project name and optional description
+* Select CodeCommit as Source provider
+* Select repository name
+
+Select Operating system, runtime and version
+Specify S3 bucket for storing the artifact (create it before)
+
+
+
+The  missing YAML file is a [build specification](https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html)
+
+
+## Add a buildspec.yml to the git repository and commit
+
+~~~~yaml
+version: 0.2
+phases:
+  install:
+    commands:
+      - echo Entered the install phase...
+  pre_build:
+    commands:
+      - echo Entered the pre_build phase...
+    finally:
+      - echo This always runs even if the login command fails
+  build:
+    commands:
+      - echo Entered the build phase...
+      - echo Build started on `date`
+  post_build:
+    commands:
+      - echo Entered the post_build phase...
+      - echo Build completed on `date`
+~~~~
+
+* Release change
+
+
 
 
 
@@ -208,34 +239,6 @@ What happened?
 [Container] 2019/03/15 20:04:18 Phase complete: DOWNLOAD_SOURCE Success: false
 [Container] 2019/03/15 20:04:18 Phase context status code: YAML_FILE_ERROR Message: YAML file does not exist
 ~~~~
-
-The  missing YAML file is a [build specification](https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html)
-
-
-* Add a buildspec.yml to the git repository and commit
-
-~~~~yaml
-version: 0.2
-phases:
-  install:
-    commands:
-      - echo Entered the install phase...
-  pre_build:
-    commands:
-      - echo Entered the pre_build phase...
-    finally:
-      - echo This always runs even if the login command fails
-  build:
-    commands:
-      - echo Entered the build phase...
-      - echo Build started on `date`
-  post_build:
-    commands:
-      - echo Entered the post_build phase...
-      - echo Build completed on `date`
-~~~~
-
-* Release change
 
 
 

@@ -4,98 +4,104 @@
 
 
 
-## Where are we now
+## Where we are
 
-* Teamcity
-  * agents setup via Chef
-  * Build projects managed via  UI
-  * Tested TC Pipeline as Code
-* Microservices
-  * Self-contained jars
-  * Deployed to EC2 instances
-  * Chef
+* Architecture
+  * From monolith to micro services
+* Build/ TeamCity
+  * Automated agent setup
+  * Build projects managed via UI
+  * ~~Pipeline as Code~~
+* Deploy/ Chef
+  * Self-contained application on EC2 instances
+  * Kitchen
 
 
-## What we are looking for
+## We are aiming for
 
-* More automation
-* Continuous deployment
-  * Orchestration layer
-  * Roll-out strategies
-  * Easy Rollback
+* Automation
+  * Infrastructure as Code
+* Continuous Delivery/ Deployment
+* Observability
+
 
 
 ## AWS CodePipeline
 
-* Continuous delivery service
-* Model, visualize, and automate the steps required to release our software
+* Model, visualize, and automate the software release process
 
-<img src="images/PipelineFlow.png" height="450px"/>
+<img src="images/PipelineFlow.png" height="550px"/>
 
 
 ### Components
 
-* CodeCommit
-  
-  source code repository
-* CodeBuild
-  
-  Continuous integration service
-* CodeDeploy
-  
-  Automates application deployments
+* [CodeCommit](https://aws.amazon.com/de/codecommit/)
+* [CodeBuild](https://aws.amazon.com/de/codebuild/)
+* [CodeDeploy](https://aws.amazon.com/de/codedeploy/)
 
 
 ### Code Commit
 
-* git-based source code repository
-* HTTPS- and SSH-based access
+<img src="images/codecommit_screenshot.png" height="600px"/>
 
-<img src="images/codecommit_screenshot.png" height="450px"/>
+
+#### What you get
+
+* Pull request
+* Comments
+* No forks
+* Very basic Web UI
+
+
+<img src="images/codecommit_comparison.png" height="550px"/>
+
+[Source]([https://stackshare.io/stackups/aws-codecommit-vs-bitbucket-vs-github) (06.05.2019)
+
 
 
 ### Code Build
 
 * Runs build scripts for compiling, testing, and packaging
-* No servers to provision and scale, or software to install, configure, and operate.
-* Supoprts different build environments for
+* Builds run in a separate Docker container
+* Support for e.g
   * Java OpenJDK 8, 9, 11
   * NET Core 2.1
   * Python 3.6.5, 3.7.1
-  * Node.js 8, 10
-  * Docker 17.09, 18.09
-  * ...
+* Linux base image Ubuntu 14.04 (EOL)/ 18.04
   
 ```shell
 aws codebuild list-curated-environment-images
 ```
 
 
+### Code Build - Source
+
+<img src="images/codebuild_source.png" height="450px"/>
+
+
 ### Code Build - buildspec
 
 ~~~~yaml
 version: 0.2
+
 phases:
-  install:
-    commands:
-      - echo Entered the install phase...
   pre_build:
     commands:
-      - echo Entered the pre_build phase...
-    finally:
-      - echo This always runs even if the login command fails
+      - echo Logging in to Amazon ECR...
+      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
   build:
     commands:
-      - echo Entered the build phase...
+      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG      
   post_build:
     commands:
-      - echo Entered the post_build phase...
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
 ~~~~
 
 
-### Code Build - Source
+<img src="images/codebuild_screenshot.png" height="650px"/>
 
-<img src="images/codebuild_source.png" height="450px"/>
+
 
 
 ## CodeDeploy
@@ -106,60 +112,59 @@ phases:
   * serverless Lambda functions, or
   * Amazon ECS services.
 
-
-* _Create application_
-* Select as compute platform _Amazon ECS_
-*  Create a deployment group
-* TODO: Here we need to have already a cluster
+* Roll back automatically if error is detected
+* Blue/ Green deployments to ECS and Fargate
 
 
-## Scenarios in our team
 
-Pipeline 1 (Triggered by code commit)
+## Scenario
 
-* Compile Code
-* Run unit tests
-* Run static code analysis
-* Upload software artifact to repository
+* CodePipeline triggered by commit
 
-Pipeline 2a (Triggered by artifact upload)
-
-* Use CodeDeploy to deploy artifact to environments (s)
+  * Compile Code
+  * Unit tests
+  * Static code analysis
+  * ...
+  * Upload software artifact
 
 
-Pipeline 2b (Triggered by artifact upload)
-
-* Fetch artifact
-* Build new Docker image
-* Upload Docker image to registry
+* CodePipeline triggered by artifact upload
+  * Var 1:
+    * Use CodeDeploy to deploy artifact to environment(s)
+  * Var 2:
+    * Fetch artifact
+    * Build new Docker image
+    * ...
+    * Upload Docker image to registry
   
+%
+* CodePipeline triggered by image upload
+  * Use CodeDeploy to deploy to ECS/ Fargate  
 
 
-Pipeline 3 (Triggered by Docker image upload)
+##  AWS CDK
 
-* Use CodeDeploy to deploy to ECS/ Fargate  
-  
-# Pros and Cons
-
-* Automated setup via CDK
-* Integrates pretty well with other AWS services
-
-## What we tried so far with TeamCity
-
-* Increase control and automation
-  * Move to own build servers
-  * Automate the installation and configuration on the agents
-  * Build configuration as code
-
-
-
-# Demo
-
-* Login to the [AWS console](https://aws.amazon.com/de/console/)
+~~~typescript
+ /**
+   *  Create a new ECR repository.
+   */
+  private createEcrRepository() {
+    return new EcrRepository(this, "EcrRepository", {
+      repositoryName: "thymeleafdemorepository",
+      lifecycleRules: [
+        {
+          tagPrefixList: ["production"],
+          maxImageCount: 5
+        },
+        { maxImageAgeDays: 30 }
+      ]
+    });
+  }
+~~~
 
 
 ## Further information
-
+* [AWS CDK](https://github.com/awslabs/aws-cdk)
 * [CodePipeline](https://aws.amazon.com/codepipeline/)
 * [CodeCommit](https://aws.amazon.com/de/codecommit/)
 * [CodeBuild](https://aws.amazon.com/de/codebuild/)

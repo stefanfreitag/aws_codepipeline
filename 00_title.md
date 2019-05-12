@@ -6,23 +6,19 @@
 
 ## Where we are
 
-* Architecture
-  * From monolith to micro services
-* Build/ TeamCity
-  * Automated agent setup
-  * Build projects managed via UI
+* From monolith to micro services
+* Build
+  * TeamCity
   * ~~Pipeline as Code~~
-* Deploy/ Chef
-  * Self-contained application on EC2 instances
-  * Kitchen
+* Deploy
+  * Chef
 
 
 ## We are aiming for
 
 * Automation
-  * Infrastructure as Code
-* Continuous Delivery/ Deployment
-* Observability
+* Infrastructure as Code
+* Continuous Delivery &  Deployment
 
 
 
@@ -30,24 +26,21 @@
 
 * Model, visualize, and automate the software release process
 
-<img src="images/PipelineFlow.png" height="550px"/>
+* Components
+  * [CodeCommit](https://aws.amazon.com/de/codecommit/)
+  * [CodeBuild](https://aws.amazon.com/de/codebuild/)
+  * [CodeDeploy](https://aws.amazon.com/de/codedeploy/)
 
 
-### Components
-
-* [CodeCommit](https://aws.amazon.com/de/codecommit/)
-* [CodeBuild](https://aws.amazon.com/de/codebuild/)
-* [CodeDeploy](https://aws.amazon.com/de/codedeploy/)
-
-
-### Code Commit
+## Code Commit
 
 <img src="images/codecommit_screenshot.png" height="600px"/>
 
 
-#### What you get
+### What you get
 
-* Pull request
+* Access via HTTPS and SSH
+* Pull requests
 * Comments
 * No forks
 * Very basic Web UI
@@ -55,11 +48,11 @@
 
 <img src="images/codecommit_comparison.png" height="550px"/>
 
-[Source]([https://stackshare.io/stackups/aws-codecommit-vs-bitbucket-vs-github) (06.05.2019)
+Popularity on StackShare, [Source](https://stackshare.io/stackups/aws-codecommit-vs-bitbucket-vs-github) (06.05.2019)
 
 
 
-### Code Build
+## Code Build
 
 * Runs build scripts for compiling, testing, and packaging
 * Builds run in a separate Docker container
@@ -69,8 +62,8 @@
   * Python 3.6.5, 3.7.1
 * Linux base image Ubuntu 14.04 (EOL)/ 18.04
   
-```shell
-aws codebuild list-curated-environment-images
+```bash
+$ aws codebuild list-curated-environment-images
 ```
 
 
@@ -92,7 +85,7 @@ phases:
   build:
     commands:
       - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .
-      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG      
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
   post_build:
     commands:
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
@@ -107,10 +100,9 @@ phases:
 ## CodeDeploy
 
 * Automates application deployments to
-  * Amazon EC2 instances,
-  * on-premises instances,
-  * serverless Lambda functions, or
-  * Amazon ECS services.
+  * Amazon EC2/ on-prem instances
+  * Lambda
+  * ECS
 
 * Roll back automatically if error is detected
 * Blue/ Green deployments to ECS and Fargate
@@ -119,8 +111,7 @@ phases:
 
 ## Scenario
 
-* CodePipeline triggered by commit
-
+* Use CodeBuild
   * Compile Code
   * Unit tests
   * Static code analysis
@@ -128,21 +119,20 @@ phases:
   * Upload software artifact
 
 
-* CodePipeline triggered by artifact upload
-  * Var 1:
-    * Use CodeDeploy to deploy artifact to environment(s)
-  * Var 2:
-    * Fetch artifact
-    * Build new Docker image
-    * ...
-    * Upload Docker image to registry
-  
-%
-* CodePipeline triggered by image upload
+* Option 1
+  * Use CodeDeploy to deploy artifact to environment(s)
+* Option 2
+  * Fetch artifact
+  * Build Docker image
+  * ...
+  * Upload Docker image to registry
   * Use CodeDeploy to deploy to ECS/ Fargate  
 
 
-##  AWS CDK
+
+##  AWS Cloud Development Kit
+
+Framework for defining cloud infrastructure in code
 
 ~~~typescript
  /**
@@ -161,6 +151,26 @@ phases:
     });
   }
 ~~~
+
+
+~~~typescript
+/**
+* Define project for compilation of source code.
+*/
+const compileProject = new PipelineProject(this, 'CompileProject', {
+            projectName: 'ThymeLeafDemoCompile',
+            description: 'Compile source code',
+            environment: {
+                buildImage: LinuxBuildImage.UBUNTU_14_04_OPEN_JDK_11,
+                computeType: ComputeType.Small,
+                privileged: false
+            },
+            timeout: 10,
+            buildSpec: './buildspec/buildspec_compile.yml'
+        });
+
+~~~
+
 
 
 ## Further information

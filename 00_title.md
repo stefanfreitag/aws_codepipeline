@@ -67,9 +67,14 @@ $ aws codebuild list-curated-environment-images
 ```
 
 
-### Code Build - Source
+### Code Build - Source Provider
 
-<img src="images/codebuild_source.png" height="450px"/>
+* Bitbucket repository
+* GitHub repository
+* AWS CodeCommit repository
+* Amazon S3 input bucket
+* Source action of a pipeline in AWS CodePipeline
+* The project does not have input source code
 
 
 ### Code Build - buildspec
@@ -129,15 +134,21 @@ phases:
   * Use CodeDeploy to deploy to ECS/ Fargate  
 
 
+## ECS Reference Architecture for CD
+
+<img src="images/ecs_refarch_cd.png" height="600px"/>
+
+[ECS RefArch CD](https://github.com/awslabs/ecs-refarch-continuous-deployment)
+
 
 ##  AWS Cloud Development Kit
 
 Framework for defining cloud infrastructure in code
 
 ~~~typescript
- /**
-   *  Create a new ECR repository.
-   */
+  /**
+  *  Create a new ECR repository.
+  */
   private createEcrRepository() {
     return new EcrRepository(this, "EcrRepository", {
       repositoryName: "thymeleafdemorepository",

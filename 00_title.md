@@ -108,9 +108,32 @@ phases:
   * Amazon EC2/ on-prem instances
   * Lambda
   * ECS
-
+  
 * Roll back automatically if error is detected
 * Blue/ Green deployments to ECS and Fargate
+
+* CodeDeploy agent required for EC2/On-Premises deployments
+
+
+### appspec.yaml
+
+~~~yaml
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /var/www/html/WordPress
+hooks:
+  BeforeInstall:
+    - location: scripts/install_dependencies.sh
+  AfterInstall:
+    - location: scripts/change_permissions.sh
+  ApplicationStart:
+    - location: scripts/start_server.sh
+    - location: scripts/create_test_db.sh
+  ApplicationStop:
+    - location: scripts/stop_server.sh
+~~~
 
 
 
@@ -138,7 +161,6 @@ phases:
 
 <img src="images/ecs_refarch_cd.png" height="600px"/>
 
-[ECS RefArch CD](https://github.com/awslabs/ecs-refarch-continuous-deployment)
 
 
 
@@ -192,4 +214,4 @@ const compileProject = new PipelineProject(this, 'CompileProject', {
 * [CodeBuild](https://aws.amazon.com/de/codebuild/)
 * [CodeDeploy](https://aws.amazon.com/de/codedeploy/)
 * [CodeBuild Provided Images](https://docs.aws.amazon.com/de_de/codebuild/latest/userguide/build-env-ref-available.html)
-* [Pulumi](https://pulumi.io/)
+* [ECS Reference Architecture CD](https://github.com/awslabs/ecs-refarch-continuous-deployment)
